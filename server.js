@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { normalizeServiceKey } from "./api-key.js";
 import { fetchCurrentNotices, koreaDate } from "./notices.js";
 import { enrichNotices, modelEndpoint } from "./models.js";
+import { publicConfig } from "./public-config.js";
 
 dotenv.config({ path: fileURLToPath(new URL(".env", import.meta.url)) });
 
@@ -15,6 +16,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/api/public-config", (_req, res) => {
+  res.set("Cache-Control", "no-store").json(publicConfig());
+});
 
 function requireKey(res) {
   if (!SERVICE_KEY) {
