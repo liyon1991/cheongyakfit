@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { normalizeServiceKey } from "./api-key.js";
+import { fetchCurrentNotices, koreaDate } from "./notices.js";
 
 dotenv.config({ path: fileURLToPath(new URL(".env", import.meta.url)) });
 
@@ -23,19 +24,19 @@ function requireKey(res) {
   }
   return true;
 }
-async function callOpenApi(endpoint, params = {}) {
+async function callOpenApi(endpoint, params = {}, raw = false) {
   const url = new URL(`https://api.odcloud.kr/api/${endpoint}`);
   url.searchParams.set("serviceKey", SERVICE_KEY);
   url.searchParams.set("page", "1");
   url.searchParams.set("perPage", "30");
   url.searchParams.set("returnType", "JSON");
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const response = await fetch(url, { headers: { "Accept": "application/json" } });
+  const response = await fetch(url, { headers: { "Accept": "application/json" }, signal: AbortSignal.timeout(20000) });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const detail = body?.message || body?.response?.body?.items || `HTTP ${response.status}`;
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    throw new Error(`Upstream HTTP ${response.status}`);
   }
+  if (raw) return body;
   if (body?.data && Array.isArray(body.data)) return body.data;
   if (body?.response?.body?.items?.item) {
     const item = body.response.body.items.item;
@@ -44,16 +45,31 @@ async function callOpenApi(endpoint, params = {}) {
   return [];
 }
 
+let noticeCache;
+let noticeRequest;
+async function getNotices() {
+  const asOf = koreaDate();
+  if (noticeCache?.asOf === asOf && Date.now() - Date.parse(noticeCache.fetchedAt) < 300000) return noticeCache;
+  if (noticeRequest?.asOf === asOf) return noticeRequest.promise;
+  const request = { asOf };
+  request.promise = fetchCurrentNotices(params => callOpenApi(
+    "ApplyhomeInfoDetailSvc/v1/getAPTLttotPblancDetail", params, true
+  ), asOf).then(data => {
+    noticeCache = { source: "한국부동산원 청약홈 APT 분양정보", asOf,
+      fetchedAt: new Date().toISOString(), count: data.length, data };
+    return noticeCache;
+  }).finally(() => { if (noticeRequest === request) noticeRequest = undefined; });
+  noticeRequest = request;
+  return request.promise;
+}
+
 app.get("/api/notices", async (_req, res) => {
   if (!requireKey(res)) return;
   try {
-    const data = await callOpenApi(
-      "ApplyhomeInfoDetailSvc/v1/getAPTLttotPblancDetail"
-    );
-    res.json({ source: "한국부동산원 청약홈 분양정보 조회 서비스", count: data.length, data });
+    res.set("Cache-Control", "no-store").json(await getNotices());
   } catch (error) {
-    console.error("notice API error:", error);
-    res.status(502).json({ error: `청약 공고 API 오류: ${error.message}` });
+    console.error("notice API error:", error.name);
+    res.status(502).json({ error: "청약 공고를 조회하지 못했습니다. 잠시 후 다시 시도해 주세요." });
   }
 });
 
@@ -73,8 +89,8 @@ app.get("/api/competition", async (req, res) => {
     );
     res.json({ source: "한국부동산원 청약홈 경쟁률 조회 서비스", count: data.length, data });
   } catch (error) {
-    console.error("competition API error:", error);
-    res.status(502).json({ error: `경쟁률 API 오류: ${error.message}` });
+    console.error("competition API error:", error.name);
+    res.status(502).json({ error: "경쟁률을 조회하지 못했습니다. 잠시 후 다시 시도해 주세요." });
   }
 });
 
