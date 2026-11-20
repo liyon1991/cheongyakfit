@@ -289,7 +289,7 @@ function renderNotices(items) {
       <div class="detail">모집공고일: ${safe(notice.RCRIT_PBLANC_DE)}<br>${scheduleDetails}<br>주택관리번호: ${safe(manageNo)} · 공고번호: ${safe(pblancNo)}</div>
       ${reasons.length ? `<div class="disclaimer"><b>확인 필요:</b> ${reasons.map(escapeHtml).join(" · ")}</div>` : ""}
       ${modelDetails ? `<details class="detail"${models.length && !reasons.length ? " open" : ""}><summary>${modelLabel} ${modelRows.length}개</summary><ul class="model-list">${modelDetails}</ul></details>` : ""}
-      ${url ? `<div class="meta"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">청약홈 공고 원문</a></div>` : ""}
+      ${url ? `<div style="margin-top:14px"><a class="secondary" style="display:inline-block;text-decoration:none;font-weight:700" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">모집공고문 보기 (청약홈 상세) ↗</a><p class="meta" style="margin:8px 0">청약홈 상세 페이지에서 모집공고문을 확인하세요. PDF 직접 링크는 아닙니다.</p></div>` : `<p class="meta">공식 공고 링크가 제공되지 않았습니다. 청약홈에서 공고명으로 검색해 주세요.</p>`}
       ${addressLink ? `<div class="map-actions"><button type="button" class="secondary map-select" data-map-id="${escapeHtml(noticeMapId(notice))}" aria-controls="noticeMap" aria-pressed="false">지도에서 보기</button><a class="map-link" href="${escapeHtml(addressLink)}" target="_blank" rel="noopener noreferrer">카카오맵에서 주소 검색 ↗</a></div>` : ""}
       ${competition}
     </article>`;
