@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { normalizeServiceKey } from "./api-key.js";
 import { fetchCurrentNotices, koreaDate } from "./notices.js";
+import { enrichNotices } from "./models.js";
 
 dotenv.config({ path: fileURLToPath(new URL(".env", import.meta.url)) });
 
@@ -54,7 +55,9 @@ async function getNotices() {
   const request = { asOf };
   request.promise = fetchCurrentNotices(params => callOpenApi(
     "ApplyhomeInfoDetailSvc/v1/getAPTLttotPblancDetail", params, true
-  ), asOf).then(data => {
+  ), asOf).then(data => enrichNotices(data, params => callOpenApi(
+    "ApplyhomeInfoDetailSvc/v1/getAPTLttotPblancMdl", params, true
+  ))).then(data => {
     noticeCache = { source: "한국부동산원 청약홈 APT 분양정보", asOf,
       fetchedAt: new Date().toISOString(), count: data.length, data };
     return noticeCache;
