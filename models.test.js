@@ -1,8 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fetchModels, enrichNotices } from "./models.js";
+import { fetchModels, enrichNotices, modelEndpoint } from "./models.js";
 
 const notice = { HOUSE_MANAGE_NO: "123", PBLANC_NO: "456" };
+test("model requests route by notice category and pass source context", async () => {
+  for (const code of ["01", "04", "06"]) {
+    const source = { ...notice, HOUSE_SECD: code };
+    assert.ok(modelEndpoint(source).endsWith(code === "01" ? "getAPTLttotPblancMdl" : "getRemndrLttotPblancMdl"));
+    await fetchModels(async (_params, context) => {
+      assert.equal(context, source);
+      return { matchCount: 0, data: [] };
+    }, source);
+  }
+});
 test("model pages are fully collected with both notice identifiers", async () => {
   const calls = [];
   const result = await fetchModels(async params => {

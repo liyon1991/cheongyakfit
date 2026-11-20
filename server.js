@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { normalizeServiceKey } from "./api-key.js";
 import { fetchCurrentNotices, koreaDate } from "./notices.js";
-import { enrichNotices } from "./models.js";
+import { enrichNotices, modelEndpoint } from "./models.js";
 
 dotenv.config({ path: fileURLToPath(new URL(".env", import.meta.url)) });
 
@@ -53,12 +53,17 @@ async function getNotices() {
   if (noticeCache?.asOf === asOf && Date.now() - Date.parse(noticeCache.fetchedAt) < 300000) return noticeCache;
   if (noticeRequest?.asOf === asOf) return noticeRequest.promise;
   const request = { asOf };
-  request.promise = fetchCurrentNotices(params => callOpenApi(
-    "ApplyhomeInfoDetailSvc/v1/getAPTLttotPblancDetail", params, true
-  ), asOf).then(data => enrichNotices(data, params => callOpenApi(
-    "ApplyhomeInfoDetailSvc/v1/getAPTLttotPblancMdl", params, true
+  request.promise = Promise.all([
+    fetchCurrentNotices(params => callOpenApi(
+      "ApplyhomeInfoDetailSvc/v1/getAPTLttotPblancDetail", params, true
+    ), asOf),
+    fetchCurrentNotices(params => callOpenApi(
+      "ApplyhomeInfoDetailSvc/v1/getRemndrLttotPblancDetail", params, true
+    ), asOf, "remaining")
+  ]).then(groups => enrichNotices(groups.flat(), (params, notice) => callOpenApi(
+    modelEndpoint(notice), params, true
   ))).then(data => {
-    noticeCache = { source: "한국부동산원 청약홈 APT 분양정보", asOf,
+    noticeCache = { source: "한국부동산원 청약홈 APT·무순위·불법행위 재공급 분양정보", asOf,
       fetchedAt: new Date().toISOString(), count: data.length, data };
     return noticeCache;
   }).finally(() => { if (noticeRequest === request) noticeRequest = undefined; });

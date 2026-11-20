@@ -1,9 +1,15 @@
+export function modelEndpoint(notice) {
+  return ["04", "06"].includes(notice.HOUSE_SECD)
+    ? "ApplyhomeInfoDetailSvc/v1/getRemndrLttotPblancMdl"
+    : "ApplyhomeInfoDetailSvc/v1/getAPTLttotPblancMdl";
+}
+
 export async function fetchModels(fetchPage, notice) {
   const rows = [];
   for (let page = 1; page <= 20; page++) {
     const body = await fetchPage({ page: String(page), perPage: "100",
       "cond[HOUSE_MANAGE_NO::EQ]": String(notice.HOUSE_MANAGE_NO),
-      "cond[PBLANC_NO::EQ]": String(notice.PBLANC_NO) });
+      "cond[PBLANC_NO::EQ]": String(notice.PBLANC_NO) }, notice);
     if (!Array.isArray(body.data) || !Number.isInteger(body.matchCount) || body.matchCount < 0
         || body.data.some(row => !row || String(row.HOUSE_MANAGE_NO) !== String(notice.HOUSE_MANAGE_NO)
           || String(row.PBLANC_NO) !== String(notice.PBLANC_NO))) {

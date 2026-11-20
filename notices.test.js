@@ -34,3 +34,26 @@ test("accepts empty results and rejects partial or malformed results", async () 
   await assert.rejects(fetchCurrentNotices(async () => ({ data: [], matchCount: 1 }), today));
   await assert.rejects(fetchCurrentNotices(async () => ({}), today));
 });
+
+test("remaining notices normalize dates and retain both official categories without mutating raw rows", () => {
+  const unsold = { ...row, HOUSE_SECD: "04", SUBSCRPT_RCEPT_BGNDE: today, SUBSCRPT_RCEPT_ENDDE: today };
+  const resupply = { ...unsold, HOUSE_SECD: "06" };
+  const result = currentNotices([unsold, resupply, unsold,
+    { ...unsold, SUBSCRPT_RCEPT_ENDDE: "2026-11-19" },
+    { ...unsold, SUBSCRPT_RCEPT_BGNDE: null }, row], today, "remaining");
+  assert.deepEqual(result.map(x => x.HOUSE_SECD), ["04", "06"]);
+  assert.equal(result[0].RCEPT_ENDDE, today);
+  assert.notEqual(result[0], unsold);
+});
+
+test("remaining source scans past expired pages without undocumented date filters", async () => {
+  const calls = [];
+  const result = await fetchCurrentNotices(async params => {
+    calls.push(params);
+    return { matchCount: 2, data: [{ ...row, HOUSE_SECD: "06", PBLANC_NO: params.page,
+      SUBSCRPT_RCEPT_BGNDE: "2026-11-18", SUBSCRPT_RCEPT_ENDDE: params.page === "1" ? "2026-11-19" : today }] };
+  }, today, "remaining");
+  assert.equal(result.length, 1);
+  assert.equal(result[0].PBLANC_NO, "2");
+  assert.deepEqual(calls, [{ page: "1", perPage: "100" }, { page: "2", perPage: "100" }]);
+});

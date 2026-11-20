@@ -1,8 +1,20 @@
 import { isDateOnly, normalizeRegion } from "./notice-utils.js";
 
+export const CATEGORIES = Object.freeze({
+  all: "전체 공고",
+  "01": "일반 아파트",
+  "04": "무순위",
+  "06": "불법행위 재공급",
+});
+
+export function noticeCategory(notice) {
+  const code = notice?.HOUSE_SECD;
+  return typeof code === "string" && code !== "all" && Object.hasOwn(CATEGORIES, code) ? code : null;
+}
+
 export const SUPPLIES = Object.freeze({
   all: { label: "전체 공급" },
-  general: { label: "일반공급(지역·순위별 일정 확인)", field: "SUPLY_HSHLDCO" },
+  general: { label: "일반공급", field: "SUPLY_HSHLDCO" },
   newlywed: { label: "신혼부부 특별공급", field: "NWWDS_HSHLDCO" },
   first: { label: "생애최초 특별공급", field: "LFE_FRST_HSHLDCO" },
   multiple: { label: "다자녀 특별공급", field: "MNYCH_HSHLDCO" },
@@ -53,15 +65,22 @@ function compareSchedules(a, b) {
       : a.status === "upcoming" ? a.start.localeCompare(b.start) : 0);
 }
 
-function scheduleFor(notice, supply, period, asOf) {
+function scheduleFor(notice, category, supply, period, asOf) {
   const scope = supply === "general" ? "일반공급" : supply === "all" ? "전체" : "특별공급";
   let intervals;
   if (supply === "general") {
-    // A blank pair can be unused; keep any reported partial or malformed pair for assessment.
-    const reported = value => value != null && (typeof value !== "string" || value.trim() !== "");
-    intervals = generalDatePrefixes.map(prefix => [notice[`${prefix}_RCPTDE`], notice[`${prefix}_ENDDE`]])
-      .filter(pair => pair.some(reported));
-    if (!intervals.length) intervals = [[null, null]];
+    if (category === "04" || category === "06") {
+      // Overall reception is not evidence of a general supply schedule.
+      intervals = [[notice.GNRL_RCEPT_BGNDE, notice.GNRL_RCEPT_ENDDE]];
+    } else if (category === "01") {
+      // A blank pair can be unused; keep any reported partial or malformed pair for assessment.
+      const reported = value => value != null && (typeof value !== "string" || value.trim() !== "");
+      intervals = generalDatePrefixes.map(prefix => [notice[`${prefix}_RCPTDE`], notice[`${prefix}_ENDDE`]])
+        .filter(pair => pair.some(reported));
+      if (!intervals.length) intervals = [[null, null]];
+    } else {
+      intervals = [[null, null]];
+    }
   } else {
     intervals = supply === "all" ? [[notice.RCEPT_BGNDE, notice.RCEPT_ENDDE]]
       : [[notice.SPSPLY_RCEPT_BGNDE, notice.SPSPLY_RCEPT_ENDDE]];
@@ -83,6 +102,7 @@ export function searchNotices(notices, criteria, asOf) {
   const counts = { total: notices.length, matched: 0, local: 0, unknown: 0 };
   if (!isDateOnly(asOf)) return { matched, unknown, counts };
   const region = normalizeRegion(criteria.region);
+  const noticeType = criteria.noticeType ?? "all";
   const period = criteria.period ?? "all";
   const maxPrice = nonNegativeNumber(criteria.maxPrice);
   const maxArea = nonNegativeNumber(criteria.maxArea);
@@ -92,9 +112,12 @@ export function searchNotices(notices, criteria, asOf) {
 
   for (const notice of notices) {
     if (!notice || typeof notice !== "object") continue;
+    const category = noticeCategory(notice);
+    if (noticeType !== "all" && category !== noticeType) continue;
     const noticeRegion = normalizeRegion(notice.SUBSCRPT_AREA_CODE_NM);
     const isLocal = Boolean(region && noticeRegion === region);
     const basicIssues = [];
+    if (!category) basicIssues.push("공고 종류 정보 없음 또는 미확인");
     if (criteria.regionMode === "only" && !isLocal) {
       if (region && noticeRegion) continue;
       basicIssues.push("공급 지역 정보 없음 또는 미확인");
@@ -110,7 +133,7 @@ export function searchNotices(notices, criteria, asOf) {
     const issues = new Set();
     const models = notice.modelStatus === "available" && Array.isArray(notice.models) ? notice.models : [];
     for (const supply of supplies) {
-      const schedule = scheduleFor(notice, supply, period, asOf);
+      const schedule = scheduleFor(notice, category, supply, period, asOf);
       if (!schedule) continue;
       const scheduleIssues = schedule.status === "unknown"
         ? [...basicIssues, `${schedule.scope} 접수일 정보 없음 또는 미확인`] : basicIssues;

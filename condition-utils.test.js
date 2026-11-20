@@ -1,16 +1,89 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SUPPLIES, modelFacts, supplyCount, searchNotices, profileInterests, profileChecklist } from "./public/condition-utils.js";
+import { CATEGORIES, noticeCategory, SUPPLIES, modelFacts, supplyCount, searchNotices, profileInterests, profileChecklist } from "./public/condition-utils.js";
 
 const today = "2026-11-20";
 const model = (patch = {}) => ({ HOUSE_TY: "084.9900A", LTTOT_TOP_AMOUNT: "60000", SUPLY_AR: "113.2000",
   SUPLY_HSHLDCO: 1, NWWDS_HSHLDCO: "1", LFE_FRST_HSHLDCO: "1", ...patch });
-const notice = (name, patch = {}) => ({ HOUSE_NM: name, SUBSCRPT_AREA_CODE_NM: "서울특별시", HOUSE_DTL_SECD: "01",
+const notice = (name, patch = {}) => ({ HOUSE_NM: name, SUBSCRPT_AREA_CODE_NM: "서울특별시", HOUSE_SECD: "01", HOUSE_DTL_SECD: "01",
   RCEPT_BGNDE: "2026-11-19", RCEPT_ENDDE: "2026-11-21", SPSPLY_RCEPT_BGNDE: today, SPSPLY_RCEPT_ENDDE: today,
   GNRL_RNK1_CRSPAREA_RCPTDE: "2026-11-19", GNRL_RNK1_CRSPAREA_ENDDE: "2026-11-21",
   modelStatus: "available", models: [model()], ...patch });
 const run = (data, criteria = {}) => searchNotices(data, { region: "서울", ...criteria }, today);
 const names = group => group.map(({ notice }) => notice.HOUSE_NM);
+const remainingModel = (patch = {}) => ({ HOUSE_TY: "084.9900A", LTTOT_TOP_AMOUNT: "60000", SUPLY_AR: "113.2000",
+  SUPLY_HSHLDCO: 1, SPSPLY_HSHLDCO: 3, ...patch });
+const remaining = (name, category, patch = {}) => notice(name, {
+  HOUSE_SECD: category, HOUSE_DTL_SECD: undefined, SPSPLY_RCEPT_BGNDE: undefined, SPSPLY_RCEPT_ENDDE: undefined,
+  SUBSCRPT_RCEPT_BGNDE: "2026-11-19", SUBSCRPT_RCEPT_ENDDE: "2026-11-21",
+  GNRL_RNK1_CRSPAREA_RCPTDE: undefined, GNRL_RNK1_CRSPAREA_ENDDE: undefined,
+  models: [remainingModel()], ...patch,
+});
+
+test("notice category is independent of supply and combines with region and same-model price/area", () => {
+  assert.deepEqual(CATEGORIES, { all: "전체 공고", "01": "일반 아파트", "04": "무순위", "06": "불법행위 재공급" });
+  const data = [notice("APT"), remaining("unranked", "04"), remaining("resupply", "06"),
+    remaining("other region", "04", { SUBSCRPT_AREA_CODE_NM: "경기도" }),
+    remaining("split models", "04", { models: [remainingModel({ LTTOT_TOP_AMOUNT: "55000", SUPLY_AR: "125" }),
+      remainingModel({ LTTOT_TOP_AMOUNT: "65000", SUPLY_AR: "110" })] }),
+    remaining("unknown category", "99"), remaining("missing category", undefined), remaining("not exact", " 04 ")];
+  const criteria = { regionMode: "only", maxPrice: 60000, maxArea: 114, period: "active" };
+  const all = run(data, criteria);
+  assert.deepEqual(names(all.matched), ["APT", "unranked", "resupply"]);
+  assert.deepEqual(names(all.unknown), ["unknown category", "missing category", "not exact"]);
+  assert.deepEqual(all.unknown[0].reasons, ["공고 종류 정보 없음 또는 미확인"]);
+  assert.equal(noticeCategory(all.unknown[0].notice), null);
+  for (const [noticeType, name] of [["01", "APT"], ["04", "unranked"], ["06", "resupply"]]) {
+    const result = run(data, { ...criteria, noticeType });
+    assert.deepEqual(names(result.matched), [name]);
+    assert.equal(result.matched[0].models.length, 1);
+    assert.deepEqual(result.unknown, []);
+  }
+  const houseFiltered = run(data, { ...criteria, noticeType: "04", houseType: "01" });
+  assert.deepEqual(houseFiltered.matched, []);
+  assert.deepEqual(names(houseFiltered.unknown), ["unranked"]);
+  assert.deepEqual(houseFiltered.unknown[0].reasons, ["주택 구분 정보 없음 또는 미확인"]);
+});
+
+test("remaining general uses only its dedicated dates, independently of normalized overall dates", () => {
+  for (const noticeType of ["04", "06"]) {
+    const data = [remaining("dedicated", noticeType, { GNRL_RCEPT_BGNDE: today, GNRL_RCEPT_ENDDE: today,
+      models: [remainingModel({ SUPLY_HSHLDCO: 1, LTTOT_TOP_AMOUNT: "61000" }),
+        remainingModel({ SUPLY_HSHLDCO: 0, LTTOT_TOP_AMOUNT: "59000" }),
+        remainingModel({ HOUSE_TY: "qualifying", LTTOT_TOP_AMOUNT: "60000" })] }),
+    remaining("no dedicated dates", noticeType, { SUBSCRPT_RCEPT_BGNDE: undefined, SUBSCRPT_RCEPT_ENDDE: undefined,
+      GNRL_RNK1_CRSPAREA_RCPTDE: today, GNRL_RNK1_CRSPAREA_ENDDE: today }),
+    remaining("past dedicated", noticeType, { GNRL_RCEPT_BGNDE: "2026-11-18", GNRL_RCEPT_ENDDE: "2026-11-19" }),
+    remaining("future dedicated", noticeType, { GNRL_RCEPT_BGNDE: "2026-11-21", GNRL_RCEPT_ENDDE: "2026-11-21" })];
+    const result = run(data, { noticeType, supplies: "general", period: "active", maxPrice: 60000 });
+    assert.deepEqual(names(result.matched), ["dedicated"]);
+    assert.deepEqual(result.matched[0].models.map(({ model }) => model.HOUSE_TY), ["qualifying"]);
+    assert.deepEqual(names(result.unknown), ["no dedicated dates"]);
+    assert.deepEqual(result.unknown[0].reasons, ["일반공급 접수일 정보 없음 또는 미확인"]);
+    assert.deepEqual(names(run(data, { noticeType, supplies: "general", period: "upcoming" }).matched), ["future dedicated"]);
+    const all = run(data, { noticeType, supplies: "all", period: "active" });
+    assert.deepEqual(names(all.matched), data.map(notice => notice.HOUSE_NM));
+    assert.deepEqual(all.matched[1].schedules[0], { supply: "all", scope: "전체", start: "2026-11-19", end: "2026-11-21", status: "active" });
+  }
+});
+
+test("remaining special totals do not establish subtype allocations and known expired dates exclude", () => {
+  for (const noticeType of ["04", "06"]) {
+    const dates = { SPSPLY_RCEPT_BGNDE: today, SPSPLY_RCEPT_ENDDE: today };
+    const data = [remaining("total only", noticeType, dates),
+      remaining("zero total still no subtype count", noticeType, { ...dates, models: [remainingModel({ SPSPLY_HSHLDCO: 0 })] }),
+      remaining("no special dates", noticeType),
+      remaining("past special", noticeType, { ...dates, SPSPLY_RCEPT_BGNDE: "2026-11-19", SPSPLY_RCEPT_ENDDE: "2026-11-19" }),
+      remaining("over price", noticeType, { ...dates, models: [remainingModel({ LTTOT_TOP_AMOUNT: 60001 })] })];
+    for (const supply of ["newlywed", "first", "multiple", "parents", "institution"]) {
+      const result = run(data, { noticeType, supplies: supply, maxPrice: 60000 });
+      assert.deepEqual(result.matched, []);
+      assert.deepEqual(names(result.unknown), ["total only", "zero total still no subtype count", "no special dates"]);
+      assert.deepEqual(result.unknown[0].reasons, [`${SUPPLIES[supply].label} 배정 세대수 미확인`]);
+      assert.match(result.unknown[2].reasons[0], /특별공급 접수일/);
+    }
+  }
+});
 
 test("AND predicates require the same housing model; only matching literal housing types are returned", () => {
   const split = notice("split", { models: [model({ LTTOT_TOP_AMOUNT: "80000" }),
@@ -25,7 +98,7 @@ test("AND predicates require the same housing model; only matching literal housi
   assert.deepEqual(result.counts, { total: 2, matched: 1, local: 1, unknown: 0 });
 });
 
-test("budget in 만원 and supply area in m² use inclusive limits; blank is unlimited, zero is not", () => {
+test("price in 만원 and supply area in m² use inclusive limits; blank is unlimited, zero is not", () => {
   const data = [notice("price", { models: [model({ LTTOT_TOP_AMOUNT: "60,000" })] })];
   assert.equal(run(data, { maxPrice: 60000, maxArea: 113.2 }).counts.matched, 1);
   assert.equal(run(data, { maxPrice: 59999 }).counts.matched, 0);
