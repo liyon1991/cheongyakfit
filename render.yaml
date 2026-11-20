@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: cheongyakfit
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATA_GO_KR_SERVICE_KEY
+        sync: false

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>청약핏 | 나에게 맞는 청약 찾기</title>
+<style>
+:root{--navy:#172554;--blue:#315efb;--bg:#f5f7fb;--ink:#172033;--muted:#718096;--line:#e7ebf2;--green:#0c9b72;--red:#d94b55;--amber:#b7791f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1120px;margin:auto;padding:0 22px 64px}
+header{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:#fff;padding:0 max(22px,calc((100vw - 1120px)/2));margin:0 -22px 28px}
+.brand{font-weight:850;font-size:22px;letter-spacing:-1px;color:#172554}.brand b{color:var(--blue)}.nav{display:flex;gap:20px;color:#64748b;font-size:14px}.nav span:first-child{color:var(--blue);font-weight:700}
+.hero{background:linear-gradient(120deg,#172554,#315efb);color:white;border-radius:24px;padding:34px 36px;display:flex;justify-content:space-between;align-items:center;gap:20px;overflow:hidden}
+.hero h1{font-size:32px;line-height:1.25;letter-spacing:-1.4px;margin:0 0 12px}.hero p{color:#dce5ff;margin:0;line-height:1.6}.hero-mark{font-size:68px;opacity:.9}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;margin-top:24px}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 5px 20px #17255408}
+h2{font-size:19px;margin:0 0 6px;letter-spacing:-.5px}.sub{color:var(--muted);font-size:13px;line-height:1.55;margin:0 0 20px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}label{font-size:13px;font-weight:700;color:#39465d}
+input,select{width:100%;border:1px solid #dce2ec;border-radius:11px;padding:12px 13px;background:#fff;color:var(--ink);outline:none}input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px #315efb18}
+.hint{font-size:11px;color:#8a94a6;margin-top:-2px}.checkline{display:flex;align-items:center;gap:9px;font-size:13px;color:#536078}.checkline input{width:auto}
+.primary{border:0;border-radius:12px;background:var(--blue);color:#fff;font-weight:750;padding:14px 18px;width:100%;margin-top:18px;box-shadow:0 6px 14px #315efb25}.primary:hover{background:#244ee8}
+.secondary{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;color:#526078;font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.stat{background:#f6f8fc;border-radius:13px;padding:13px}.stat strong{display:block;font-size:23px;letter-spacing:-1px}.stat span{font-size:11px;color:var(--muted)}
+.resulthead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.pill{display:inline-flex;border-radius:99px;padding:5px 9px;font-size:11px;font-weight:750;background:#edf2ff;color:#315efb}.listing{border:1px solid var(--line);border-radius:15px;padding:16px;margin-top:11px}.listing-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.listing h3{font-size:15px;margin:0 0 5px}.meta{font-size:12px;color:var(--muted);line-height:1.6}.match{font-size:12px;font-weight:800;color:var(--green);white-space:nowrap}.match.warn{color:var(--amber)}.tags{display:flex;gap:6px;flex-wrap:wrap;margin:11px 0}.tag{font-size:11px;padding:5px 8px;background:#f2f5fa;color:#59677e;border-radius:7px}.detail{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;font-size:12px;line-height:1.7;color:#59677e}.detail b{color:#27344b}.empty{padding:30px 12px;text-align:center;color:#8993a5;font-size:13px}
+.disclaimer{background:#fff9e9;border:1px solid #f4e5b8;color:#82651f;border-radius:12px;padding:12px 14px;font-size:11px;line-height:1.6;margin-top:18px}
+footer{text-align:center;color:#9aa3b2;font-size:11px;margin-top:28px}
+.revenue-row{display:flex;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line);font-size:12px}.revenue-row strong{color:var(--green);white-space:nowrap}.revenue-btn{font-size:12px;padding:11px 8px}.revenue-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}\n@media(max-width:760px){.app{padding:0 14px 40px}header{margin:0 -14px 18px;padding:0 16px;height:64px}.nav{gap:10px;font-size:12px}.hero{padding:25px 22px;border-radius:18px}.hero h1{font-size:25px}.hero-mark{font-size:48px}.grid{grid-template-columns:1fr;gap:15px}.card{padding:19px}.formgrid{gap:12px}.stats{gap:7px}.stat{padding:10px}.stat strong{font-size:20px}}
+@media(max-width:420px){.nav span:last-child{display:none}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}.hero-mark{display:none}}
+</style>
+</head>
+<body>
+<header><div class="brand">청약<b>핏</b></div><div class="nav"><span>맞춤 청약 찾기</span><span>이용 안내</span><span>데모 버전</span></div></header>
+<main class="app">
+<section class="hero"><div><h1>복잡한 청약 조건,<br>나에게 맞는 공고만.</h1><p>내 조건을 입력하면 샘플 공고와 비교해<br>확인해야 할 자격 요건을 정리해 드려요.</p></div><div class="hero-mark">⌂</div></section>
+<div class="grid">
+<section class="card">
+<h2>나의 청약 프로필</h2><p class="sub">가상 데이터로 동작하는 MVP입니다. 실제 주민등록번호나 계좌정보는 입력하지 마세요.</p>
+<form id="profile">
+<div class="formgrid">
+<div class="field"><label for="age">나이</label><input id="age" type="number" min="19" max="100" value="36" required></div>
+<div class="field"><label for="region">거주 지역</label><select id="region"><option>서울</option><option>경기</option><option>인천</option><option>부산</option><option>대전</option><option>기타</option></select></div>
+<div class="field"><label for="years">해당 지역 거주기간</label><select id="years"><option value="0">1년 미만</option><option value="1">1년 이상</option><option value="2">2년 이상</option><option value="3" selected>3년 이상</option><option value="5">5년 이상</option></select></div>
+<div class="field"><label for="marital">혼인 상태</label><select id="marital"><option value="married" selected>기혼</option><option value="single">미혼</option><option value="divorced">이혼·기타</option></select></div>
+<div class="field"><label for="children">미성년 자녀 수</label><select id="children"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></div>
+<div class="field"><label for="homeless">무주택 여부</label><select id="homeless"><option value="yes" selected>세대원 전원 무주택</option><option value="no">주택 보유 세대원 있음</option><option value="unknown">잘 모르겠음</option></select></div>
+<div class="field"><label for="income">월 가구소득 (세전)</label><select id="income"><option value="300">300만원 미만</option><option value="500">300~500만원</option><option value="700" selected>500~700만원</option><option value="900">700~900만원</option><option value="1100">900만원 이상</option></select></div>
+<div class="field"><label for="assets">총자산 구간</label><select id="assets"><option value="2">2억원 미만</option><option value="4" selected>2~4억원</option><option value="6">4~6억원</option><option value="8">6~8억원</option><option value="10">8억원 이상</option></select></div>
+<div class="field"><label for="account">청약통장 가입기간</label><select id="account"><option value="0">6개월 미만</option><option value="1">6개월~1년</option><option value="2">1~2년</option><option value="5">2~5년</option><option value="10" selected>5년 이상</option></select></div>
+<div class="field"><label for="payments">납입 인정회차</label><select id="payments"><option value="0">6회 미만</option><option value="6">6~11회</option><option value="12">12~23회</option><option value="24" selected>24회 이상</option></select></div>
+<div class="field full"><label class="checkline"><input id="firsthome" type="checkbox"> 생애최초 주택 구입 희망 (본인 및 세대 기준 별도 확인 필요)</label></div>
+</div>
+<button class="primary" type="submit">내 조건으로 청약 찾기</button>
+</form>
+<div class="disclaimer">🔒 데모 개인정보 안내: 입력값은 이 브라우저 화면에서만 계산되며 서버로 전송하거나 저장하지 않습니다. 페이지를 새로고침하면 초기값으로 돌아갑니다.</div>
+</section>
+<section class="card" id="results">
+<div class="resulthead"><div><h2>맞춤 공고 결과</h2><p class="sub" style="margin:5px 0 0">프로필을 바꾸고 다시 검색할 수 있어요.</p></div><span class="pill">샘플 공고</span></div>
+<div class="stats"><div class="stat"><strong id="count">3</strong><span>검토할 공고</span></div><div class="stat"><strong id="good">1</strong><span>조건 부합 가능</span></div><div class="stat"><strong id="check">2</strong><span>추가 확인 필요</span></div></div>
+<div id="list"></div>
+<div class="disclaimer">⚠️ 아래 결과는 서비스 작동을 보여주기 위한 가상 공고 및 단순 예시 규칙입니다. 실제 청약 자격·당첨 가능성을 판정하지 않으며, 반드시 해당 입주자모집공고 원문과 청약홈·LH의 공식 안내를 확인해야 합니다.</div>
+</section>
+</div>
+
+
+<section class="card" style="margin-top:22px" id="liveApi">
+  <div class="resulthead">
+    <div><h2>실시간 청약 데이터</h2><p class="sub" style="margin:5px 0 0">청약홈 공고·경쟁률 API 연결 영역입니다.</p></div>
+    <span class="pill" id="apiStatus">API 연결 대기</span>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="primary" id="loadNotices" style="width:auto;margin:0">실제 청약 공고 불러오기</button>
+    <button class="secondary" id="loadCompetitionSample">경쟁률 API 안내</button>
+  </div>
+  <div id="apiMessage" class="disclaimer" style="margin:0 0 14px">공공데이터포털에서 발급받은 인증키를 서버 환경변수에 등록하면 실제 공고를 불러옵니다. 인증키는 웹페이지에 노출되지 않습니다.</div>
+  <div id="apiNoticeList" class="empty">API 인증키 등록 후 실제 청약 공고를 불러올 수 있습니다.</div>
+  <div class="disclaimer">실제 공고·경쟁률 데이터 조회 기능입니다. 자격 판정은 공고문 원문을 기준으로 별도 확인해야 하며, API 응답 지연·데이터 변경이 있을 수 있습니다.</div>
+</section>
+
+<section class="card" style="margin-top:22px" id="revenue">
+  <div class="resulthead">
+    <div><h2>사업 수익 시뮬레이터</h2><p class="sub" style="margin:5px 0 0">버튼을 눌러 수익모델이 작동하는 모습을 시연해 보세요.</p></div>
+    <span class="pill" style="background:#e8f8f1;color:#07845f">가상 매출 데모</span>
+  </div>
+  <div class="stats">
+    <div class="stat"><strong id="revenueTotal">₩0</strong><span>누적 가상 매출</span></div>
+    <div class="stat"><strong id="revenueCount">0건</strong><span>가상 전환 건수</span></div>
+    <div class="stat"><strong id="revenueAvg">₩0</strong><span>건당 평균 매출</span></div>
+  </div>
+  <div class="formgrid">
+    <div class="listing" style="margin:0">
+      <h3>금융 제휴 고객 연결</h3><div class="meta">대출 상담 신청 연결 1건</div>
+      <div style="font-size:20px;font-weight:800;margin:12px 0;color:#0c9b72">+₩30,000</div>
+      <button class="primary revenue-btn" style="margin-top:0" data-label="금융 제휴 고객 연결" data-amount="30000">상담 연결 시뮬레이션</button>
+    </div>
+    <div class="listing" style="margin:0">
+      <h3>중개사 고객 연결</h3><div class="meta">관심 고객 전달 1건</div>
+      <div style="font-size:20px;font-weight:800;margin:12px 0;color:#0c9b72">+₩20,000</div>
+      <button class="primary revenue-btn" style="margin-top:0" data-label="중개사 고객 연결" data-amount="20000">고객 연결 시뮬레이션</button>
+    </div>
+    <div class="listing" style="margin:0">
+      <h3>청약 분석 리포트 판매</h3><div class="meta">프리미엄 리포트 1건</div>
+      <div style="font-size:20px;font-weight:800;margin:12px 0;color:#0c9b72">+₩9,900</div>
+      <button class="primary revenue-btn" style="margin-top:0" data-label="청약 분석 리포트 판매" data-amount="9900">리포트 구매 시뮬레이션</button>
+    </div>
+    <div class="listing" style="margin:0">
+      <h3>입주 서비스 제휴</h3><div class="meta">이사·입주청소 연결 1건</div>
+      <div style="font-size:20px;font-weight:800;margin:12px 0;color:#0c9b72">+₩15,000</div>
+      <button class="primary revenue-btn" style="margin-top:0" data-label="입주 서비스 제휴" data-amount="15000">서비스 연결 시뮬레이션</button>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
+    <strong style="font-size:14px">가상 매출 발생 내역</strong>
+    <button class="secondary" id="resetRevenue">시뮬레이션 초기화</button>
+  </div>
+  <div id="revenueLog" class="empty">아직 발생한 가상 매출이 없습니다.<br>위 버튼을 눌러 매출 발생 과정을 확인해 보세요.</div>
+  <div class="disclaimer">🧪 시연 전용 가상 수치입니다. 실제 결제, 고객 연결, 금융상품 신청, 광고 계약은 발생하지 않으며 표시된 금액은 실제 매출이 아닙니다.</div>
+</section>
+
+<footer>CHEONGYAK FIT · MVP DEMO · 실제 공고 및 공식 자격판정과 무관한 시연용 서비스</footer>
+</main>
+<script>
+const notices=[
+{id:1,name:"서울 리버뷰 센트럴",type:"민영주택 · 특별공급/일반공급",region:"서울",date:"2026.11.18 ~ 2026.11.20",kind:"민영",conditions:["서울 거주자 우선 검토","세대주 및 무주택 요건 확인","청약통장·예치금 기준 확인"],note:"민영주택은 지역·면적별 예치금, 공급유형, 세대주 여부 등 세부 요건 확인이 필요합니다.",match:p=>p.region==="서울"&&p.homeless==="yes"},
+{id:2,name:"고양 새빛 공공분양",type:"공공분양 · 신혼부부 특별공급",region:"경기",date:"2026.11.21 ~ 2026.11.24",kind:"공공",conditions:["혼인기간 및 자녀 요건 확인","소득·자산 기준 확인","청약통장 납입 인정회차 확인"],note:"공공분양 특별공급은 공급유형별 소득·자산·혼인기간 등 기준이 다르므로 공고문 확인이 필수입니다.",match:p=>p.marital==="married"&&p.homeless==="yes"&&p.children>=1},
+{id:3,name:"인천 해오름 행복주택",type:"공공임대 · 청년/신혼부부",region:"인천",date:"2026.11.25 ~ 2026.11.28",kind:"임대",conditions:["신청 계층 및 연령 확인","소득·자산 기준 확인","인천 거주·우선공급 기준 확인"],note:"행복주택은 계층별 신청 자격과 소득·자산 기준이 다릅니다. 공고의 공급대상 계층을 확인하세요.",match:p=>p.marital==="married"&&p.homeless!=="no"}
+];
+function getProfile(){return {age:+age.value,region:region.value,years:+years.value,marital:marital.value,children:+children.value,homeless:homeless.value,income:+income.value,assets:+assets.value,account:+account.value,payments:+payments.value,firsthome:firsthome.checked};}
+function render(){
+ const p=getProfile();let matched=notices.map(n=>{let basic=n.match(p);let local=n.region===p.region;let unknown=p.homeless==="unknown"||p.assets>=6||p.income>=900;let status=basic&&local&&!unknown?"조건 부합 가능":"추가 확인 필요";let score=(basic?2:0)+(local?1:0)+(p.homeless==="yes"?1:0)+(p.payments>=12?1:0);return {...n,status,score,local,basic};}).sort((a,b)=>b.score-a.score);
+ const good=matched.filter(x=>x.status==="조건 부합 가능").length;
+ count.textContent=matched.length;document.getElementById("good").textContent=good;check.textContent=matched.length-good;
+ list.innerHTML=matched.map(n=>`<article class="listing"><div class="listing-top"><div><h3>${n.name}</h3><div class="meta">${n.type}<br>접수 예정: ${n.date}</div></div><span class="match ${n.status==="조건 부합 가능"?"":"warn"}">${n.status}</span></div><div class="tags"><span class="tag">${n.region}</span><span class="tag">${n.kind}</span><span class="tag">가상 공고</span></div><div class="detail"><b>확인할 항목</b><br>${n.conditions.map(c=>"• "+c).join("<br>")}<br><br>${n.note}</div></article>`).join("");
+}
+document.getElementById("profile").addEventListener("submit",e=>{e.preventDefault();render();document.getElementById("results").scrollIntoView({behavior:"smooth",block:"start"});});
+render();
+
+let simulatedRevenue = 0;
+let simulatedTransactions = [];
+const won = n => "₩" + n.toLocaleString("ko-KR");
+function updateRevenue(){
+  document.getElementById("revenueTotal").textContent = won(simulatedRevenue);
+  document.getElementById("revenueCount").textContent = simulatedTransactions.length + "건";
+  document.getElementById("revenueAvg").textContent = won(simulatedTransactions.length ? Math.round(simulatedRevenue/simulatedTransactions.length) : 0);
+  const log = document.getElementById("revenueLog");
+  if(!simulatedTransactions.length){
+    log.className = "empty";
+    log.innerHTML = "아직 발생한 가상 매출이 없습니다.<br>위 버튼을 눌러 매출 발생 과정을 확인해 보세요.";
+  } else {
+    log.className = "";
+    log.innerHTML = simulatedTransactions.slice().reverse().map((t,i)=>`<div class="revenue-row"><span><b>${t.label}</b><br><span style="color:#8993a5">${t.time}</span></span><strong>+${won(t.amount)}</strong></div>`).join("");
+  }
+}
+document.querySelectorAll(".revenue-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const amount = Number(btn.dataset.amount);
+    simulatedRevenue += amount;
+    simulatedTransactions.push({label:btn.dataset.label,amount,time:new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})});
+    updateRevenue();
+    btn.textContent = "가상 매출 +" + won(amount) + " 반영됨";
+    setTimeout(()=>{btn.textContent = btn.dataset.label + " 시뮬레이션";},1300);
+  });
+});
+document.getElementById("resetRevenue").addEventListener("click",()=>{
+  simulatedRevenue=0; simulatedTransactions=[]; updateRevenue();
+});
+updateRevenue();
+
+
+// 실제 청약홈 API: 서버(/api/*)를 통해 호출하므로 인증키가 브라우저에 노출되지 않습니다.
+const apiStatus = document.getElementById("apiStatus");
+const apiMessage = document.getElementById("apiMessage");
+const apiNoticeList = document.getElementById("apiNoticeList");
+const moneyText = v => {
+  if (v === null || v === undefined || v === "") return "-";
+  const n = Number(String(v).replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n.toLocaleString("ko-KR") : String(v);
+};
+function pick(obj, keys) {
+  for (const k of keys) if (obj && obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
+  return "";
+}
+function renderNotices(items) {
+  if (!items.length) {
+    apiNoticeList.className = "empty";
+    apiNoticeList.textContent = "조회된 공고가 없습니다. 잠시 후 다시 시도하거나 검색 조건을 확인해 주세요.";
+    return;
+  }
+  apiNoticeList.className = "";
+  apiNoticeList.innerHTML = items.map((x, i) => {
+    const name = pick(x, ["HOUSE_NM","houseNm","house_nm","HOUSE_NM"]);
+    const address = pick(x, ["HSSPLY_ADRES","hssplyAdres","SUBSCRPT_AREA_CODE_NM","subscrptAreaCodeNm"]);
+    const date = pick(x, ["RCRIT_PBLANC_DE","rcritPblancDe"]);
+    const start = pick(x, ["SUBSCRPT_RCEPT_BGNDE","rceptBgnde","RCEPT_BGNDE"]);
+    const end = pick(x, ["SUBSCRPT_RCEPT_ENDDE","rceptEndde","RCEPT_ENDDE"]);
+    const manageNo = pick(x, ["HOUSE_MANAGE_NO","houseManageNo"]);
+    const pblancNo = pick(x, ["PBLANC_NO","pblancNo"]);
+    const safe = v => String(v || "-").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    return `<article class="listing">
+      <div class="listing-top"><div><h3>${safe(name || "공고명 미제공")}</h3><div class="meta">${safe(address || "공급위치 정보 없음")}</div></div><span class="pill">실제 API</span></div>
+      <div class="tags"><span class="tag">모집공고일 ${safe(date || "-")}</span><span class="tag">접수 ${safe(start || "-")} ~ ${safe(end || "-")}</span></div>
+      <div class="detail">주택관리번호: ${safe(manageNo || "-")} · 공고번호: ${safe(pblancNo || "-")}</div>
+      ${manageNo && pblancNo ? `<button class="secondary competition-btn" data-manage="${safe(manageNo)}" data-pblanc="${safe(pblancNo)}" style="margin-top:10px">이 공고 경쟁률 조회</button>` : `<div class="meta" style="margin-top:8px">경쟁률 조회에 필요한 공고 식별정보가 응답에 없습니다.</div>`}
+      <div class="competition-result" style="margin-top:8px"></div>
+    </article>`;
+  }).join("");
+  document.querySelectorAll(".competition-btn").forEach(btn => btn.addEventListener("click", async () => {
+    const target = btn.parentElement.querySelector(".competition-result");
+    btn.disabled = true; btn.textContent = "조회 중...";
+    try {
+      const q = new URLSearchParams({houseManageNo:btn.dataset.manage,pblancNo:btn.dataset.pblanc});
+      const r = await fetch("/api/competition?"+q.toString());
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "경쟁률 조회 실패");
+      const rows = j.data || [];
+      target.innerHTML = rows.length
+        ? `<div class="disclaimer">경쟁률 API 응답 ${rows.length}건<br><pre style="white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0 0">${JSON.stringify(rows.slice(0,3),null,2).replace(/</g,"&lt;")}</pre></div>`
+        : `<div class="meta">경쟁률 정보가 아직 없거나 조회 결과가 없습니다.</div>`;
+    } catch(e) { target.textContent = "경쟁률 조회 오류: " + e.message; }
+    finally { btn.disabled = false; btn.textContent = "이 공고 경쟁률 조회"; }
+  }));
+}
+document.getElementById("loadNotices").addEventListener("click", async () => {
+  apiStatus.textContent = "조회 중";
+  apiMessage.textContent = "청약홈 분양정보 API에 연결하고 있습니다.";
+  apiNoticeList.className = "empty"; apiNoticeList.textContent = "데이터를 불러오는 중입니다...";
+  try {
+    const r = await fetch("/api/notices");
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "공고 조회 실패");
+    apiStatus.textContent = "API 연결 성공";
+    apiMessage.textContent = `실제 청약홈 공고 ${j.data.length}건을 불러왔습니다. 데이터 출처: 한국부동산원 청약홈`;
+    renderNotices(j.data);
+  } catch(e) {
+    apiStatus.textContent = "연결 확인 필요";
+    apiMessage.textContent = e.message + " — .env의 DATA_GO_KR_SERVICE_KEY 설정과 API 활용신청 승인을 확인해 주세요.";
+    apiNoticeList.className = "empty"; apiNoticeList.textContent = "실제 데이터 조회에 실패했습니다.";
+  }
+});
+document.getElementById("loadCompetitionSample").addEventListener("click", () => {
+  apiMessage.textContent = "공고 카드에서 '이 공고 경쟁률 조회'를 누르면 해당 주택관리번호·공고번호로 경쟁률 API를 호출합니다. 공고별 접수 데이터가 아직 없으면 결과가 비어 있을 수 있습니다.";
+});
+
+</script>
+</body></html>
